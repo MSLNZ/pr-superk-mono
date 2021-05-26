@@ -130,8 +130,6 @@ def start_service():
     config = Config(path)
     db = config.database()
 
-    service, record = None, None
-
     try:
         record = db.equipment[alias]
     except KeyError:
@@ -150,6 +148,7 @@ def start_service():
             sys.exit(1)
     except Exception as e:
         input(f'{e}\n\nPress <ENTER> to exit ...')
+        sys.exit(1)
 
     port = config.value('manager/port')
     wait_for_server('localhost', port, 10)
