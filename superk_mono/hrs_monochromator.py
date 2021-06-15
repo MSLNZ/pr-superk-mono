@@ -24,7 +24,7 @@ class HRSMonochromator(BaseEquipment):
         record : :class:`~msl.equipment.record_types.EquipmentRecord`
             The equipment record.
         """
-        super(HRSMonochromator, self).__init__(record, name='mono')
+        super(HRSMonochromator, self).__init__(record, name='mono-hrs')
 
         gratings = record.user_defined.get('gratings')
         if not gratings:
