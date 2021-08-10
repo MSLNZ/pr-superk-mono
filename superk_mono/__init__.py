@@ -166,3 +166,8 @@ def start_service():
         input(f'{e}\n\nPress <ENTER> to exit ...')
     finally:
         service.disconnect()
+
+
+from .superk_laser import SuperK
+from .hrs_monochromator import HRSMonochromator
+from .thorlabs_nd_filter_wheel import FW212CNEB
