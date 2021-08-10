@@ -72,23 +72,24 @@ def nkt_callbacks(superk):
 
     @NKT.DeviceStatusCallback
     def device_status_callback(port, dev_id, status, length, address):
-        logger.debug(f'device_status_callback: port={port} dev_id={dev_id} '
-                     f'status={status} length={length} address={address}')
         data = get_callback_data(length, address)
-        superk.emit_notification(port, dev_id, status, data)
+        logger.debug(f'device_status_callback: port={port} dev_id={dev_id} '
+                     f'status={status} length={length} address={address} data={data}')
+        # superk.emit_notification(port, dev_id, status, data)
 
     @NKT.RegisterStatusCallback
     def register_status_callback(port, dev_id, reg_id, reg_status, reg_type, length, address):
-        logger.debug(f'register_status_callback: port={port} dev_id={dev_id} reg_id={reg_id} '
-                     f'reg_status={reg_status} reg_type={reg_type} length={length} address={address}')
         data = get_callback_data(length, address)
-        superk.emit_notification(port, dev_id, reg_id, reg_status, reg_type, data)
+        logger.debug(f'register_status_callback: port={port} dev_id={dev_id} reg_id={reg_id} '
+                     f'reg_status={reg_status} reg_type={reg_type} length={length} '
+                     f'address={address} data={data}')
+        # superk.emit_notification(port, dev_id, reg_id, reg_status, reg_type, data)
 
     @NKT.PortStatusCallback
     def port_status_callback(port, status, cur_scan, max_scan, device):
         logger.debug(f'port_status_callback: port={port} status={status} cur_scan={cur_scan} '
                      f'max_scan={max_scan} device={device}')
-        superk.emit_notification(port, status, cur_scan, max_scan, device)
+        # superk.emit_notification(port, status, cur_scan, max_scan, device)
 
     return device_status_callback, register_status_callback, port_status_callback
 
@@ -220,9 +221,9 @@ class SuperK(BaseEquipment):
         if self.connection.register_write_read_u16(ID.DEVICE, ID.MODE, mode.value) != mode.value:
             self.connection.raise_exception(f'Cannot set {self.alias!r} to {mode!r}')
         self.logger.info(f'set {self.alias!r} to {mode!r}')
-        for name, value in self._modes.items():
-            if value == mode.value:
-                self.emit_notification(mode=name)  # notify all linked Clients
+        #for name, value in self._modes.items():
+        #    if value == mode.value:
+        #        self.emit_notification(mode=name)  # notify all linked Clients
 
     def get_temperature(self) -> float:
         """Get the temperature of the laser."""
@@ -264,7 +265,7 @@ class SuperK(BaseEquipment):
         self.logger.info(f'set {self.alias!r} power level to {percentage}%')
         val = self.connection.register_write_read_u16(ID.DEVICE, ID.POWER_LEVEL, int(percentage * 10))
         actual = float(val) * 0.1
-        self.emit_notification(level=actual)  # notify all linked Clients
+        # self.emit_notification(level=actual)  # notify all linked Clients
         return actual
 
     def set_current_level(self, percentage: float) -> float:
@@ -307,7 +308,7 @@ class SuperK(BaseEquipment):
         # the documentation indicates that there is a scaling factor of 0.1
         val = self.connection.register_write_read_u16(ID.DEVICE, ID.CURRENT_LEVEL, int(percentage * 10))
         actual = float(val) * 0.1
-        self.emit_notification(level=actual)  # notify all linked Clients
+        # self.emit_notification(level=actual)  # notify all linked Clients
         return actual
 
     def is_emission_on(self) -> bool:
@@ -340,7 +341,7 @@ class SuperK(BaseEquipment):
             pass  # raise custom error message below
         else:
             self.logger.info(f'turn {self.alias!r} emission {text}')
-            self.emit_notification(emission=bool(state))  # notify all linked Clients
+            # self.emit_notification(emission=bool(state))  # notify all linked Clients
             return
 
         self.connection.raise_exception(f'Cannot turn the {self.alias!r} emission {text}')

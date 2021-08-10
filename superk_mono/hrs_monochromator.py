@@ -60,7 +60,7 @@ class HRSMonochromator(BaseEquipment):
         self.connection.mono_filter_home()
         self.logger.info(f'home the filter wheel of {self.alias!r}')
         position = self.get_filter_position()
-        self.emit_notification(filter_wheel_position=position)
+        # self.emit_notification(filter_wheel_position=position)
         return position
 
     def home_front_entrance_slit(self) -> int:
@@ -74,7 +74,7 @@ class HRSMonochromator(BaseEquipment):
         self.connection.mono_slit_home(self.FRONT_ENTRANCE_SLIT)
         self.logger.info(f'home the front entrance slit of {self.alias!r}')
         width = self.get_front_entrance_slit_width()
-        self.emit_notification(front_entrance_slit_width=width)
+        # self.emit_notification(front_entrance_slit_width=width)
         return width
 
     def home_front_exit_slit(self) -> int:
@@ -88,7 +88,7 @@ class HRSMonochromator(BaseEquipment):
         self.connection.mono_slit_home(self.FRONT_EXIT_SLIT)
         self.logger.info(f'home the front exit slit of {self.alias!r}')
         width = self.get_front_exit_slit_width()
-        self.emit_notification(front_exit_slit_width=width)
+        # self.emit_notification(front_exit_slit_width=width)
         return width
 
     def get_front_entrance_slit_width(self) -> int:
@@ -128,7 +128,7 @@ class HRSMonochromator(BaseEquipment):
         self._set_slit_width(self.FRONT_ENTRANCE_SLIT, width)
         actual = self.get_front_entrance_slit_width()
         assert actual == width
-        self.emit_notification(front_entrance_slit_width=actual)
+        # self.emit_notification(front_entrance_slit_width=actual)
         return actual
 
     def set_front_exit_slit_width(self, um: int) -> int:
@@ -148,7 +148,7 @@ class HRSMonochromator(BaseEquipment):
         self._set_slit_width(self.FRONT_EXIT_SLIT, width)
         actual = self.get_front_exit_slit_width()
         assert actual == width
-        self.emit_notification(front_exit_slit_width=actual)
+        # self.emit_notification(front_exit_slit_width=actual)
         return actual
 
     def _set_slit_width(self, port, um):
@@ -196,7 +196,7 @@ class HRSMonochromator(BaseEquipment):
         self.connection.set_mono_wavelength_nm(requested)
         encoder = self.get_wavelength()
         self.logger.info(f'set {self.alias!r} wavelength to {requested} nm [encoder={encoder} nm]')
-        self.emit_notification(wavelength={'requested': requested, 'encoder': encoder})
+        # self.emit_notification(wavelength={'requested': requested, 'encoder': encoder})
         return encoder
 
     def get_filter_position(self) -> int:
@@ -233,7 +233,7 @@ class HRSMonochromator(BaseEquipment):
         actual = self.get_filter_position()
         assert actual == pos
         self.logger.info(f'set {self.alias!r} filter position to {pos} [{self._filter_info[pos]}]')
-        self.emit_notification(filter_wheel_position=actual)
+        # self.emit_notification(filter_wheel_position=actual)
         return actual
 
     def grating_info(self) -> dict:
@@ -293,5 +293,5 @@ class HRSMonochromator(BaseEquipment):
         actual = self.get_grating_position()
         assert actual == pos
         self.logger.info(f'set {self.alias!r} grating to position {pos} [{self._grating_info[pos]}]')
-        self.emit_notification(grating_position=actual)
+        # self.emit_notification(grating_position=actual)
         return actual
