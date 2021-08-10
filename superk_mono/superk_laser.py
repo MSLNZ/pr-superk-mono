@@ -357,8 +357,12 @@ class SuperK(BaseEquipment):
         text = 'locked' if on else 'unlocked'
         try:
             self.connection.register_write_u8(ID.FRONT_PANEL, ID.PANEL_LOCK, int(on))
-        except OSError:
-            pass  # raise custom error message below
+        except OSError as e:
+            if str(e).startswith('RegResultNacked:'):
+                self.logger.warning(f'{self.alias!r} does not support {text[:-2]}ing the front panel')
+                return
+            else:
+                pass  # raise custom error message below
         else:
             self.logger.info(f'{text} the front panel of the {self.alias!r}')
             return
