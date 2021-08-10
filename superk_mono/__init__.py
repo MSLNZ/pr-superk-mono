@@ -109,6 +109,9 @@ def start_manager():
     if config.value('manager/disable_tls'):
         cmd.append('--disable-tls')
 
+    if config.value('manager/debug'):
+        cmd.append('--debug')
+
     try:
         subprocess.run(cmd)
     except (SystemExit, KeyboardInterrupt):
