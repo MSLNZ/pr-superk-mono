@@ -126,7 +126,8 @@ class SuperK(BaseEquipment):
             self.connection.raise_exception(f'{self.alias!r} port status is {status!r}')
 
         self.ensure_interlock_ok()
-        self.lock_front_panel(record.connection.properties.get('lock_front_panel', False))
+        if record.connection.properties.get('lock_front_panel', False):
+            self.lock_front_panel(True)
 
     def ensure_interlock_ok(self) -> bool:
         """Make sure that the interlock is okay.
