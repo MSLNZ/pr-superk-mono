@@ -125,7 +125,7 @@ def start_service():
     from .hrs_monochromator import HRSMonochromator
     from .thorlabs_nd_filter_wheel import FW212CNEB
 
-    logging.basicConfig(level=logging.INFO, format='%(asctime)s -- %(message)s')
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)-5s] %(message)s')
     logger.setLevel(logging.INFO)
 
     path, alias = parse_args()
