@@ -261,8 +261,10 @@ class SuperK(BaseEquipment):
             The actual power level.
         """
         if percentage < 0 or percentage > 100:
-            self.connection.raise_exception(f'Invalid {self.alias!r} power level of {percentage}. '
-                                            f'Must be in range [0, 100].')
+            self.connection.raise_exception(
+                f'Invalid {self.alias!r} power level of {percentage}. '
+                f'Must be in range [0, 100].'
+            )
 
         # the documentation indicates that there is a scaling factor of 0.1
         self.logger.info(f'set {self.alias!r} power level to {percentage}%')
@@ -305,8 +307,10 @@ class SuperK(BaseEquipment):
 
     def _set_current_level(self, percentage):
         if percentage < 0 or percentage > 100:
-            self.connection.raise_exception(f'Invalid {self.alias!r} current level of {percentage}. '
-                                            f'Must be in range [0, 100].')
+            self.connection.raise_exception(
+                f'Invalid {self.alias!r} current level of {percentage}. '
+                f'Must be in the range [0, 100].'
+            )
 
         # the documentation indicates that there is a scaling factor of 0.1
         val = self.connection.register_write_read_u16(ID.DEVICE, ID.CURRENT_LEVEL, int(percentage * 10))
