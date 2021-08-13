@@ -331,11 +331,6 @@ class SuperK(BaseEquipment):
         ----------
         on : :class:`bool`
             Whether to turn the laser emission on (:data:`True`) or off (:data:`False`).
-
-        Returns
-        -------
-        :class:`bool`
-            Whether the laser emission is on (:data:`True`) or off (:data:`False`).
         """
         state, text = (3, 'on') if on else (0, 'off')
         try:
