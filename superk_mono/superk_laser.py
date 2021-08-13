@@ -73,22 +73,22 @@ def nkt_callbacks(superk):
     @NKT.DeviceStatusCallback
     def device_status_callback(port, dev_id, status, length, address):
         data = get_callback_data(length, address)
-        logger.debug(f'device_status_callback: port={port} dev_id={dev_id} '
-                     f'status={status} length={length} address={address} data={data}')
+        logger.info(f'device_status_callback: port={port} dev_id={dev_id} '
+                    f'status={status} length={length} address={address} data={data}')
         # superk.emit_notification(port, dev_id, status, data)
 
     @NKT.RegisterStatusCallback
     def register_status_callback(port, dev_id, reg_id, reg_status, reg_type, length, address):
         data = get_callback_data(length, address)
-        logger.debug(f'register_status_callback: port={port} dev_id={dev_id} reg_id={reg_id} '
-                     f'reg_status={reg_status} reg_type={reg_type} length={length} '
-                     f'address={address} data={data}')
+        logger.info(f'register_status_callback: port={port} dev_id={dev_id} reg_id={reg_id} '
+                    f'reg_status={reg_status} reg_type={reg_type} length={length} '
+                    f'address={address} data={data}')
         # superk.emit_notification(port, dev_id, reg_id, reg_status, reg_type, data)
 
     @NKT.PortStatusCallback
     def port_status_callback(port, status, cur_scan, max_scan, device):
-        logger.debug(f'port_status_callback: port={port} status={status} cur_scan={cur_scan} '
-                     f'max_scan={max_scan} device={device}')
+        logger.info(f'port_status_callback: port={port} status={status} cur_scan={cur_scan} '
+                    f'max_scan={max_scan} device={device}')
         # superk.emit_notification(port, status, cur_scan, max_scan, device)
 
     return device_status_callback, register_status_callback, port_status_callback
@@ -136,14 +136,14 @@ class SuperK(BaseEquipment):
         """
         status = self.connection.register_read_u16(ID.DEVICE, ID.INTERLOCK)
         if status == 2:
-            self.logger.debug(f'{self.alias!r} interlock is okay')
+            self.logger.info(f'{self.alias!r} interlock is okay')
             return True
 
         if status == 1:  # then requires an interlock reset
-            self.logger.debug(f'resetting the {self.alias!r} interlock... ')
+            self.logger.info(f'resetting the {self.alias!r} interlock... ')
             status = self.connection.register_write_read_u16(ID.DEVICE, ID.INTERLOCK, 1)
             if status == 2:
-                self.logger.debug(f'{self.alias!r} interlock is okay')
+                self.logger.info(f'{self.alias!r} interlock is okay')
                 return True
 
         self.connection.raise_exception(f'Invalid {self.alias!r} interlock status code {status}. '
