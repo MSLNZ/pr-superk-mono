@@ -224,9 +224,9 @@ class SuperK(BaseEquipment):
         if self.connection.register_write_read_u16(ID.DEVICE, ID.MODE, mode.value) != mode.value:
             self.connection.raise_exception(f'Cannot set {self.alias!r} to {mode!r}')
         self.logger.info(f'set {self.alias!r} to {mode!r}')
-        #for name, value in self._modes.items():
-        #    if value == mode.value:
-        #        self.emit_notification(mode=name)  # notify all linked Clients
+        # for name, value in self._modes.items():
+        #     if value == mode.value:
+        #         self.emit_notification(mode=name)  # notify all linked Clients
 
     def get_temperature(self) -> float:
         """Get the temperature of the laser."""
