@@ -337,16 +337,19 @@ class SuperK(BaseEquipment):
             Whether to turn the laser emission on (:data:`True`) or off (:data:`False`).
         """
         state, text = (3, 'on') if on else (0, 'off')
+        self.logger.info(f'turn {self.alias!r} emission {text}')
         try:
             self.connection.register_write_u8(ID.DEVICE, ID.EMISSION, state)
-        except OSError:
-            pass  # raise custom error message below
+        except OSError as e:
+            error = str(e)
         else:
-            self.logger.info(f'turn {self.alias!r} emission {text}')
             # self.emit_notification(emission=bool(state))  # notify all linked Clients
             return
 
-        self.connection.raise_exception(f'Cannot turn the {self.alias!r} emission {text}')
+        self.connection.raise_exception(
+            f'Cannot turn the {self.alias!r} emission {text}\n'
+            f'{error}'
+        )
 
     def lock_front_panel(self, on: bool) -> None:
         """Lock the front panel so that the current or power level cannot be changed.
