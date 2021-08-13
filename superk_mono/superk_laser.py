@@ -360,19 +360,19 @@ class SuperK(BaseEquipment):
             Whether to lock (:data:`True`) or unlock (:data:`False`) the front panel.
         """
         text = 'locked' if on else 'unlocked'
+        self.logger.info(f'{text} the front panel of the {self.alias!r}')
         try:
             self.connection.register_write_u8(ID.FRONT_PANEL, ID.PANEL_LOCK, int(on))
         except OSError as e:
-            if str(e).startswith('RegResultNacked:'):
-                self.logger.warning(f'{self.alias!r} does not support {text[:-2]}ing the front panel')
-                return
-            else:
-                pass  # raise custom error message below
+            error = str(e)
         else:
-            self.logger.info(f'{text} the front panel of the {self.alias!r}')
+            # self.emit_notification(locked=bool(on))  # notify all linked Clients
             return
 
-        self.connection.raise_exception(f'Cannot {text[:-2]} the front panel of the {self.alias!r}')
+        self.connection.raise_exception(
+            f'Cannot {text[:-2]} the front panel of the {self.alias!r}\n'
+            f'{error}'
+        )
 
     def disconnect(self):
         """Unlock the front panel and close the port."""
