@@ -146,8 +146,10 @@ class SuperK(BaseEquipment):
                 self.logger.info(f'{self.alias!r} interlock is okay')
                 return True
 
-        self.connection.raise_exception(f'Invalid {self.alias!r} interlock status code {status}. '
-                                        f'Is the key switch off?')
+        self.connection.raise_exception(
+            f'Invalid {self.alias!r} interlock status code {status}. '
+            f'Is the key in the off position?'
+        )
 
     def is_constant_current_mode(self) -> bool:
         """Is the laser in constant current mode?"""
