@@ -61,7 +61,7 @@ def nkt_callbacks(superk):
     Returns
     -------
     :class:`tuple`
-        The Qt signaler and the Device, Register and Port callback functions.
+        The Device, Register and Port callback functions.
     """
     def get_callback_data(length, address):
         # 'address' is an integer and represents the address of c_void_p from the callback
