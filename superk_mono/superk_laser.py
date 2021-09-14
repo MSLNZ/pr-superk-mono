@@ -377,5 +377,34 @@ class SuperK(BaseEquipment):
     def disconnect(self):
         """Unlock the front panel and close the port."""
         self.lock_front_panel(False)
+        self.set_front_panel_text('')
         self.connection.close_ports(self.record.connection.address)
         self.connection.disconnect()
+
+    def get_front_panel_text(self) -> str:
+        """Get the custom user text that is displayed on the front panel.
+
+        Returns
+        -------
+        :class:`str`
+            The user text.
+        """
+        return self.connection.register_read_ascii(ID.DEVICE, ID.USER_TEXT)
+
+    def set_front_panel_text(self, text: str) -> str:
+        """Set the custom user text to display on the front panel.
+
+        Parameters
+        ----------
+        text : :class:`str`
+            The text to display on the front panel. Only ASCII characters are
+            allowed. The maximum number of characters that can be displayed
+            is 20.
+
+        Returns
+        -------
+        :class:`str`
+            The user text that is actually displayed on the front panel.
+        """
+        self.logger.info(f'set the {self.alias!r} front-panel text to {text!r}')
+        return self.connection.register_write_read_ascii(ID.DEVICE, ID.USER_TEXT, text, False)

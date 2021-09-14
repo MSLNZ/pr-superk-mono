@@ -88,3 +88,13 @@ def test_lock_front_panel():
     # these should not raise an error, the return value is irrelevant
     superk.lock_front_panel(True)
     superk.lock_front_panel(False)
+
+
+def test_front_panel_text():
+    assert superk.set_front_panel_text('Hello') == 'Hello'
+    assert superk.get_front_panel_text() == 'Hello'
+
+    # 20 character limit
+    assert superk.set_front_panel_text('012345678901234567890123') == '01234567890123456789'
+
+    assert superk.set_front_panel_text('') == ''
