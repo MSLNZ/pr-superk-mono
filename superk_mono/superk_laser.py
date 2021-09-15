@@ -13,12 +13,10 @@ from . import (
 )
 
 
-class ID(IntEnum):
-    """The register ID's for a SuperK Fianium laser."""
-    DEVICE = 0x0F
-    FRONT_PANEL = 0x01
+class ID60(IntEnum):
+    """The register ID's for a SuperK Fianium laser (module type 0x60)."""
 
-    # Main Module (Device)
+    # SuperK Fianium
     INLET_TEMPERATURE = 0x11
     EMISSION = 0x30
     MODE = 0x31
@@ -34,9 +32,30 @@ class ID(IntEnum):
     USER_TEXT = 0x6C
 
     # Front Panel
+    FRONT_PANEL = 0x01
     PANEL_LOCK = 0x3D
     DISPLAY_TEXT = 0x72
     ERROR_FLASH = 0x8D
+
+
+class ID88(IntEnum):
+    """The register ID's for a SuperK Fianium laser (module type 0x88)."""
+    # SuperK G3 Mainboard
+    INLET_TEMPERATURE = 0x11
+    EMISSION = 0x30
+    MODE = 0x31
+    INTERLOCK = 0x32
+    DATETIME = 0x33
+    PULSE_PICKER_RATIO = 0x34
+    WATCHDOG_INTERVAL = 0x36
+    CURRENT_LEVEL = 0x37
+    PULSE_PICKER_NIM_DELAY = 0x39
+    MAINBOARD_NIM_DELAY = 0x3A
+    USER_CONFIG = 0x3B
+    MAX_PULSE_PICKER_RATIO = 0x3D
+    STATUS_BITS = 0x66
+    ERROR_CODE = 0x67
+    USER_TEXT = 0x8D
 
 
 class OperatingModes(IntEnum):
@@ -96,6 +115,10 @@ def nkt_callbacks(superk):
 
 class SuperK(BaseEquipment):
 
+    DEVICE_ID = 0x0F
+    MODULE_TYPE_0x60 = 0x60
+    MODULE_TYPE_0x88 = 0x88
+
     def __init__(self, record):
         """Communicate with a SuperK Fianium laser from NKT Photonics.
 
@@ -106,13 +129,27 @@ class SuperK(BaseEquipment):
         """
         super(SuperK, self).__init__(record, name='superk')
 
-        self._modes = {
-            'Constant current': OperatingModes.CONSTANT_CURRENT,
-            'Current modulation': OperatingModes.MODULATED_CURRENT,
-            'Power lock': OperatingModes.POWER_LOCK,
-            # 'Power modulation ': OperatingModes.MODULATED_POWER,
-            # 'Constant power': OperatingModes.CONSTANT_POWER,
-        }
+        serial = self.connection.device_get_module_serial_number_str(SuperK.DEVICE_ID)
+        if serial != record.serial:
+            raise ValueError(f'SuperK serial number mismatch {serial} != {record.serial}')
+
+        # different SuperK's have different mainboard registry values
+        self.MODULE_TYPE = self.connection.device_get_type(SuperK.DEVICE_ID)
+        if self.MODULE_TYPE == SuperK.MODULE_TYPE_0x60:
+            self.ID = ID60
+            self.MODES = {
+                'Constant current': OperatingModes.CONSTANT_CURRENT,
+                'Current modulation': OperatingModes.MODULATED_CURRENT,
+                'Power lock': OperatingModes.POWER_LOCK,
+            }
+        elif self.MODULE_TYPE == SuperK.MODULE_TYPE_0x88:
+            self.ID = ID88
+            self.MODES = {
+                'Constant current': OperatingModes.CONSTANT_CURRENT,
+                'Power lock': OperatingModes.POWER_LOCK,
+            }
+        else:
+            raise ValueError(f'Unsupported module type 0x{self.MODULE_TYPE:x}')
 
         self._device_callback, self._register_callback, self._port_callback = nkt_callbacks(self)
 
@@ -134,14 +171,14 @@ class SuperK(BaseEquipment):
 
         Raises an exception if it is not okay and it cannot be reset.
         """
-        status = self.connection.register_read_u16(ID.DEVICE, ID.INTERLOCK)
+        status = self.connection.register_read_u16(SuperK.DEVICE_ID, self.ID.INTERLOCK)
         if status == 2:
             self.logger.info(f'{self.alias!r} interlock is okay')
             return True
 
         if status == 1:  # then requires an interlock reset
             self.logger.info(f'resetting the {self.alias!r} interlock... ')
-            status = self.connection.register_write_read_u16(ID.DEVICE, ID.INTERLOCK, 1)
+            status = self.connection.register_write_read_u16(SuperK.DEVICE_ID, self.ID.INTERLOCK, 1)
             if status == 2:
                 self.logger.info(f'{self.alias!r} interlock is okay')
                 return True
@@ -179,7 +216,11 @@ class SuperK(BaseEquipment):
         :class:`OperatingModes`
             The operating mode.
         """
-        return OperatingModes(self.connection.register_read_u16(ID.DEVICE, ID.MODE))
+        if self.MODULE_TYPE == SuperK.MODULE_TYPE_0x60:
+            read = self.connection.register_read_u16
+        else:
+            read = self.connection.register_read_u8
+        return OperatingModes(read(SuperK.DEVICE_ID, self.ID.MODE))
 
     def get_operating_modes(self) -> dict:
         """Get all valid operating modes.
@@ -189,7 +230,7 @@ class SuperK(BaseEquipment):
         :class:`dict`
             The operating modes.
         """
-        return self._modes
+        return self.MODES
 
     def enable_constant_current_mode(self) -> None:
         """Set the laser to be in constant current mode."""
@@ -221,27 +262,28 @@ class SuperK(BaseEquipment):
         """
         mode = self.convert_to_enum(mode, OperatingModes, to_upper=True)
         self.emission(False)
-        if self.connection.register_write_read_u16(ID.DEVICE, ID.MODE, mode.value) != mode.value:
+        if self.connection.register_write_read_u16(SuperK.DEVICE_ID, self.ID.MODE, mode.value) != mode.value:
             self.connection.raise_exception(f'Cannot set {self.alias!r} to {mode!r}')
         self.logger.info(f'set {self.alias!r} to {mode!r}')
-        # for name, value in self._modes.items():
+        # for name, value in self.MODES.items():
         #     if value == mode.value:
         #         self.emit_notification(mode=name)  # notify all linked Clients
+        #         break
 
     def get_temperature(self) -> float:
         """Get the temperature of the laser."""
         # the documentation indicates that there is a scaling factor of 0.1
-        return self.connection.register_read_s16(ID.DEVICE, ID.INLET_TEMPERATURE) * 0.1
+        return self.connection.register_read_s16(SuperK.DEVICE_ID, self.ID.INLET_TEMPERATURE) * 0.1
 
     def get_power_level(self) -> float:
         """Get the constant/modulated power level of the laser."""
         # the documentation indicates that there is a scaling factor of 0.1
-        return self.connection.register_read_u16(ID.DEVICE, ID.POWER_LEVEL) * 0.1
+        return self.connection.register_read_u16(SuperK.DEVICE_ID, self.ID.POWER_LEVEL) * 0.1
 
     def get_current_level(self) -> float:
         """Get the constant/modulated current level of the laser."""
         # the documentation indicates that there is a scaling factor of 0.1
-        return self.connection.register_read_u16(ID.DEVICE, ID.CURRENT_LEVEL) * 0.1
+        return self.connection.register_read_u16(SuperK.DEVICE_ID, self.ID.CURRENT_LEVEL) * 0.1
 
     def get_feedback_level(self) -> float:
         """Get the power lock (external feedback) level of the laser."""
@@ -268,7 +310,7 @@ class SuperK(BaseEquipment):
 
         # the documentation indicates that there is a scaling factor of 0.1
         self.logger.info(f'set {self.alias!r} power level to {percentage}%')
-        val = self.connection.register_write_read_u16(ID.DEVICE, ID.POWER_LEVEL, int(percentage * 10))
+        val = self.connection.register_write_read_u16(SuperK.DEVICE_ID, self.ID.POWER_LEVEL, int(percentage * 10))
         actual = float(val) * 0.1
         # self.emit_notification(level=actual)  # notify all linked Clients
         return actual
@@ -313,7 +355,7 @@ class SuperK(BaseEquipment):
             )
 
         # the documentation indicates that there is a scaling factor of 0.1
-        val = self.connection.register_write_read_u16(ID.DEVICE, ID.CURRENT_LEVEL, int(percentage * 10))
+        val = self.connection.register_write_read_u16(SuperK.DEVICE_ID, self.ID.CURRENT_LEVEL, int(percentage * 10))
         actual = float(val) * 0.1
         # self.emit_notification(level=actual)  # notify all linked Clients
         return actual
@@ -326,7 +368,7 @@ class SuperK(BaseEquipment):
         :class:`bool`
             Whether the laser emission is on (:data:`True`) or off (:data:`False`).
         """
-        return bool(self.connection.register_read_u8(ID.DEVICE, ID.EMISSION))
+        return bool(self.connection.register_read_u8(SuperK.DEVICE_ID, self.ID.EMISSION))
 
     def emission(self, on: bool) -> None:
         """Turn the laser emission on or off.
@@ -339,7 +381,7 @@ class SuperK(BaseEquipment):
         state, text = (3, 'on') if on else (0, 'off')
         self.logger.info(f'turn {self.alias!r} emission {text}')
         try:
-            self.connection.register_write_u8(ID.DEVICE, ID.EMISSION, state)
+            self.connection.register_write_u8(SuperK.DEVICE_ID, self.ID.EMISSION, state)
         except OSError as e:
             error = str(e)
         else:
@@ -362,7 +404,7 @@ class SuperK(BaseEquipment):
         text = 'locked' if on else 'unlocked'
         self.logger.info(f'{text} the front panel of the {self.alias!r}')
         try:
-            self.connection.register_write_u8(ID.FRONT_PANEL, ID.PANEL_LOCK, int(on))
+            self.connection.register_write_u8(self.ID.FRONT_PANEL, self.ID.PANEL_LOCK, int(on))
         except OSError as e:
             error = str(e)
         else:
@@ -375,9 +417,10 @@ class SuperK(BaseEquipment):
         )
 
     def disconnect(self):
-        """Unlock the front panel and close the port."""
-        self.lock_front_panel(False)
-        self.set_front_panel_text('')
+        """Unlock the front panel, set the user text to an empty string and close the port."""
+        if self.MODULE_TYPE == SuperK.MODULE_TYPE_0x60:
+            self.lock_front_panel(False)
+        self.set_front_panel_text(' ')
         self.connection.close_ports(self.record.connection.address)
         self.connection.disconnect()
 
@@ -389,7 +432,7 @@ class SuperK(BaseEquipment):
         :class:`str`
             The user text.
         """
-        return self.connection.register_read_ascii(ID.DEVICE, ID.USER_TEXT)
+        return self.connection.register_read_ascii(SuperK.DEVICE_ID, self.ID.USER_TEXT)
 
     def set_front_panel_text(self, text: str) -> str:
         """Set the custom user text to display on the front panel.
@@ -407,4 +450,4 @@ class SuperK(BaseEquipment):
             The user text that is actually displayed on the front panel.
         """
         self.logger.info(f'set the {self.alias!r} front-panel text to {text!r}')
-        return self.connection.register_write_read_ascii(ID.DEVICE, ID.USER_TEXT, text, False)
+        return self.connection.register_write_read_ascii(SuperK.DEVICE_ID, self.ID.USER_TEXT, text, False)

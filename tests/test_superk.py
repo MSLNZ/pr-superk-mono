@@ -1,5 +1,6 @@
 import os
 
+import pytest
 from msl.equipment import Config
 
 from superk_mono import SuperK
@@ -18,7 +19,7 @@ def test_interlock():
     assert superk.ensure_interlock_ok()
 
 
-def test_operating_mode():
+def test_constant_current_mode():
     superk.set_operating_mode(OperatingModes.CONSTANT_CURRENT)
     assert superk.get_operating_mode() == OperatingModes.CONSTANT_CURRENT
     assert superk.is_constant_current_mode()
@@ -35,6 +36,9 @@ def test_operating_mode():
     assert not superk.is_modulated_power_mode()
     assert not superk.is_power_lock_mode()
 
+
+@pytest.mark.skipif(superk.MODULE_TYPE == superk.MODULE_TYPE_0x88, reason='modulated-current mode not supported')
+def test_modulated_current_mode():
     superk.set_operating_mode(OperatingModes.MODULATED_CURRENT)
     assert superk.get_operating_mode() == OperatingModes.MODULATED_CURRENT
     assert not superk.is_constant_current_mode()
@@ -51,6 +55,8 @@ def test_operating_mode():
     assert not superk.is_modulated_power_mode()
     assert not superk.is_power_lock_mode()
 
+
+def test_power_lock_mode():
     superk.set_operating_mode(OperatingModes.POWER_LOCK)
     assert superk.get_operating_mode() == OperatingModes.POWER_LOCK
     assert not superk.is_constant_current_mode()
@@ -67,8 +73,6 @@ def test_operating_mode():
     assert not superk.is_modulated_power_mode()
     assert superk.is_power_lock_mode()
 
-    assert isinstance(superk.get_operating_modes(), dict)
-
 
 def test_temperature():
     assert 15 < superk.get_temperature() < 25
@@ -84,17 +88,22 @@ def test_level():
     assert superk.get_current_level() == 10
 
 
+@pytest.mark.skipif(superk.MODULE_TYPE == superk.MODULE_TYPE_0x88, reason='front-panel (un)locking not supported')
 def test_lock_front_panel():
     # these should not raise an error, the return value is irrelevant
-    superk.lock_front_panel(True)
-    superk.lock_front_panel(False)
+    assert superk.lock_front_panel(True) is None
+    assert superk.lock_front_panel(False) is None
 
 
 def test_front_panel_text():
     assert superk.set_front_panel_text('Hello') == 'Hello'
     assert superk.get_front_panel_text() == 'Hello'
 
-    # 20 character limit
-    assert superk.set_front_panel_text('012345678901234567890123') == '01234567890123456789'
+    if superk.MODULE_TYPE == superk.MODULE_TYPE_0x60:
+        # 20 character limit
+        assert superk.set_front_panel_text('012345678901234567890123') == '01234567890123456789'
+    else:
+        # 240 character limit
+        assert superk.set_front_panel_text('a'*256) == 'a'*240
 
-    assert superk.set_front_panel_text('') == ''
+    assert superk.set_front_panel_text(' ') == ' '
