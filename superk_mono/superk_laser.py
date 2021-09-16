@@ -130,7 +130,7 @@ class SuperK(BaseEquipment):
         super(SuperK, self).__init__(record, name='superk')
 
         serial = self.connection.device_get_module_serial_number_str(SuperK.DEVICE_ID)
-        if serial != record.serial:
+        if serial and serial != record.serial:
             raise ValueError(f'SuperK serial number mismatch {serial} != {record.serial}')
 
         # different SuperK's have different mainboard registry values
