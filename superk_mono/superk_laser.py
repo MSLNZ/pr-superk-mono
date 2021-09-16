@@ -393,39 +393,47 @@ class SuperK(BaseEquipment):
             f'{error}'
         )
 
-    def lock_front_panel(self, on: bool) -> None:
+    def lock_front_panel(self, on: bool) -> bool:
         """Lock the front panel so that the current or power level cannot be changed.
 
         Parameters
         ----------
         on : :class:`bool`
             Whether to lock (:data:`True`) or unlock (:data:`False`) the front panel.
+
+        Returns
+        -------
+        :class:`bool`
+            Whether the request to (un)lock the front panel was successful. The
+            laser with a module type 0x88 does not permit the front panel to be
+            (un)locked and therefore this method will always return :data:`False`
+            for this laser mainboard.
         """
-        text = 'locked' if on else 'unlocked'
-        self.logger.info(f'{text} the front panel of the {self.alias!r}')
+        text = 'lock' if on else 'unlock'
+        if self.MODULE_TYPE == SuperK.MODULE_TYPE_0x88:
+            self.logger.info(f'the {self.alias!r} does not support {text}ing the front panel')
+            return False
+
         try:
             self.connection.register_write_u8(self.ID.FRONT_PANEL, self.ID.PANEL_LOCK, int(on))
-        except OSError as e:
-            error = str(e)
+        except (OSError, AttributeError) as e:
+            self.logger.error(f'Cannot {text} the front panel of the {self.alias!r}, '
+                              f'{e.__class__.__name__}: {e}')
+            return False
         else:
             # self.emit_notification(locked=bool(on))  # notify all linked Clients
-            return
-
-        self.connection.raise_exception(
-            f'Cannot {text[:-2]} the front panel of the {self.alias!r}\n'
-            f'{error}'
-        )
+            self.logger.info(f'{text}ed the front panel of the {self.alias!r}')
+            return True
 
     def disconnect(self):
         """Unlock the front panel, set the user text to an empty string and close the port."""
-        if self.MODULE_TYPE == SuperK.MODULE_TYPE_0x60:
-            self.lock_front_panel(False)
-        self.set_front_panel_text(' ')
+        self.lock_front_panel(False)
+        self.set_user_text(' ')  # module type 0x88 requires at least 1 character to be written
         self.connection.close_ports(self.record.connection.address)
         self.connection.disconnect()
 
-    def get_front_panel_text(self) -> str:
-        """Get the custom user text that is displayed on the front panel.
+    def get_user_text(self) -> str:
+        """Get the custom user-text value.
 
         Returns
         -------
@@ -434,20 +442,21 @@ class SuperK(BaseEquipment):
         """
         return self.connection.register_read_ascii(SuperK.DEVICE_ID, self.ID.USER_TEXT)
 
-    def set_front_panel_text(self, text: str) -> str:
-        """Set the custom user text to display on the front panel.
+    def set_user_text(self, text: str) -> str:
+        """Set the custom user-text value.
 
         Parameters
         ----------
         text : :class:`str`
-            The text to display on the front panel. Only ASCII characters are
-            allowed. The maximum number of characters that can be displayed
-            is 20.
+            The text to write to lasers firmware. Only ASCII characters are
+            allowed. The maximum number of characters is 20 for the laser with
+            module type 0x60 and 240 characters for module type 0x88. The laser
+            with module type 0x60 will display the text on the front panel.
 
         Returns
         -------
         :class:`str`
-            The user text that is actually displayed on the front panel.
+            The user text that was actually stored in the laser's firmware.
         """
         self.logger.info(f'set the {self.alias!r} front-panel text to {text!r}')
         return self.connection.register_write_read_ascii(SuperK.DEVICE_ID, self.ID.USER_TEXT, text, False)
