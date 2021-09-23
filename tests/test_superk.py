@@ -95,15 +95,16 @@ def test_lock_front_panel():
     assert superk.lock_front_panel(False) is None
 
 
-def test_front_panel_text():
-    assert superk.set_front_panel_text('Hello') == 'Hello'
-    assert superk.get_front_panel_text() == 'Hello'
+def test_user_text():
+    assert superk.set_user_text('Hello') == 'Hello'
+    assert superk.get_user_text() == 'Hello'
 
     if superk.MODULE_TYPE == superk.MODULE_TYPE_0x60:
         # 20 character limit
-        assert superk.set_front_panel_text('012345678901234567890123') == '01234567890123456789'
+        assert superk.set_user_text('012345678901234567890123') == '01234567890123456789'
     else:
         # 240 character limit
-        assert superk.set_front_panel_text('a'*256) == 'a'*240
+        assert superk.set_user_text('a'*256) == 'a'*240
 
-    assert superk.set_front_panel_text(' ') == ' '
+    expect = '' if superk.MODULE_TYPE == superk.MODULE_TYPE_0x60 else ' '
+    assert superk.set_user_text('') == expect
