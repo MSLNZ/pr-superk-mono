@@ -90,9 +90,9 @@ def test_level():
 
 @pytest.mark.skipif(superk.MODULE_TYPE == superk.MODULE_TYPE_0x88, reason='front-panel (un)locking not supported')
 def test_lock_front_panel():
-    # these should not raise an error, the return value is irrelevant
-    assert superk.lock_front_panel(True) is None
-    assert superk.lock_front_panel(False) is None
+    # returns the call status from the SDK, not whether the front panel is (un)locked
+    assert superk.lock_front_panel(True) is True
+    assert superk.lock_front_panel(False) is True
 
 
 def test_user_text():
