@@ -428,7 +428,7 @@ class SuperK(BaseEquipment):
     def disconnect(self):
         """Unlock the front panel, set the user text to an empty string and close the port."""
         self.lock_front_panel(False)
-        self.set_user_text(' ')  # module type 0x88 requires at least 1 character to be written
+        self.set_user_text('')
         self.connection.close_ports(self.record.connection.address)
         self.connection.disconnect()
 
@@ -458,5 +458,8 @@ class SuperK(BaseEquipment):
         :class:`str`
             The user text that was actually stored in the laser's firmware.
         """
+        if not text and self.MODULE_TYPE == SuperK.MODULE_TYPE_0x88:
+            # module type 0x88 requires at least 1 character to be written
+            text = ' '
         self.logger.info(f'set the {self.alias!r} front-panel text to {text!r}')
         return self.connection.register_write_read_ascii(SuperK.DEVICE_ID, self.ID.USER_TEXT, text, False)
