@@ -168,6 +168,6 @@ def start_service():
         service.disconnect()
 
 
-from .superk_laser import SuperK
-from .hrs_monochromator import HRSMonochromator
-from .thorlabs_nd_filter_wheel import FW212CNEB
+from .superk_laser import SuperK  # noqa
+from .hrs_monochromator import HRSMonochromator  # noqa
+from .thorlabs_nd_filter_wheel import FW212CNEB  # noqa

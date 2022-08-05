@@ -85,7 +85,7 @@ def nkt_callbacks(superk):
     def get_callback_data(length, address):
         # 'address' is an integer and represents the address of c_void_p from the callback
         try:
-            return bytearray((c_ubyte * length).from_address(address)[:])
+            return bytearray((c_ubyte * length).from_address(address)[:])  # noqa
         except ValueError:
             return bytearray()
 
@@ -277,8 +277,13 @@ class SuperK(BaseEquipment):
 
     def get_power_level(self) -> float:
         """Get the constant/modulated power level of the laser."""
+        if self.MODULE_TYPE == SuperK.MODULE_TYPE_0x88:
+            self.connection.raise_exception(
+                f'{self.alias!r} does not support power levels'
+            )
+
         # the documentation indicates that there is a scaling factor of 0.1
-        return self.connection.register_read_u16(SuperK.DEVICE_ID, self.ID.POWER_LEVEL) * 0.1
+        return self.connection.register_read_u16(SuperK.DEVICE_ID, self.ID.POWER_LEVEL) * 0.1  # noqa
 
     def get_current_level(self) -> float:
         """Get the constant/modulated current level of the laser."""
@@ -302,6 +307,11 @@ class SuperK(BaseEquipment):
         :class:`float`
             The actual power level.
         """
+        if self.MODULE_TYPE == SuperK.MODULE_TYPE_0x88:
+            self.connection.raise_exception(
+                f'{self.alias!r} does not support power levels'
+            )
+
         if percentage < 0 or percentage > 100:
             self.connection.raise_exception(
                 f'Invalid {self.alias!r} power level of {percentage}. '
@@ -310,7 +320,7 @@ class SuperK(BaseEquipment):
 
         # the documentation indicates that there is a scaling factor of 0.1
         self.logger.info(f'set {self.alias!r} power level to {percentage}%')
-        val = self.connection.register_write_read_u16(SuperK.DEVICE_ID, self.ID.POWER_LEVEL, int(percentage * 10))
+        val = self.connection.register_write_read_u16(SuperK.DEVICE_ID, self.ID.POWER_LEVEL, int(percentage * 10))  # noqa
         actual = float(val) * 0.1
         # self.emit_notification(level=actual)  # notify all linked Clients
         return actual
@@ -415,7 +425,7 @@ class SuperK(BaseEquipment):
             return False
 
         try:
-            self.connection.register_write_u8(self.ID.FRONT_PANEL, self.ID.PANEL_LOCK, int(on))
+            self.connection.register_write_u8(self.ID.FRONT_PANEL, self.ID.PANEL_LOCK, int(on))  # noqa
         except (OSError, AttributeError) as e:
             self.logger.error(f'Cannot {text} the front panel of the {self.alias!r}, '
                               f'{e.__class__.__name__}: {e}')
@@ -448,7 +458,7 @@ class SuperK(BaseEquipment):
         Parameters
         ----------
         text : :class:`str`
-            The text to write to lasers firmware. Only ASCII characters are
+            The text to write to the laser's firmware. Only ASCII characters are
             allowed. The maximum number of characters is 20 for the laser with
             module type 0x60 and 240 characters for module type 0x88. The laser
             with module type 0x60 will display the text on the front panel.
