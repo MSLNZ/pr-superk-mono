@@ -8,7 +8,7 @@ from msl.equipment import Config
 from msl.equipment.utils import convert_to_enum
 
 __author__ = 'Measurement Standards Laboratory of New Zealand'
-__copyright__ = '\xa9 2021, ' + __author__
+__copyright__ = '\xa9 2021 - 2022, ' + __author__
 __version__ = '0.1.0.dev0'
 
 _v = re.search(r'(\d+)\.(\d+)\.(\d+)[.-]?(.*)', __version__).groups()
