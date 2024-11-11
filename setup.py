@@ -146,7 +146,7 @@ def get_version():
 
 
 install_requires = [
-    'msl-network',
+    'msl-network==0.5.0',
     'msl-equipment @ git+https://github.com/MSLNZ/msl-equipment',
 ]
 
